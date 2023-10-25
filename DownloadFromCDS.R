@@ -111,7 +111,10 @@ time <- ncvar_get(nc.daily,"time");# extracts time
 
 f <- "tasmaxAdjust_day_GFDL-ESM4_ssp585_r1i1p1f1_gr010_TCDF-CDFT23-ERA5Land-1981-2010_19510101-19651231.nc"
 b <- brick(f)  
-r <- raster(f, band = "tasmaxAdjust")
+
+#Colorado
+e <- extent(251, 258, 37, 41)
+x <- crop(b, e)
 
 r <- raster(f, band = "tasmaxAdjust", xmn=min(lon), xmx=max(lon), ymn=min(lat), ymx=max(lat) )
 plot(r)
