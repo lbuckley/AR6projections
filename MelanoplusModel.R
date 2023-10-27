@@ -4,9 +4,14 @@
 #microclimate model
 
 #biophysical model 
+#Lactin and Johnson 1997  https://doi.org/10.1111/j.1365-3032.1997.tb01150.x
+#melanization, using Spectroradiometer like that at UC Berkeley, Fielding and Defoliant https://doi.org/10.1665/1082-6467(2005)14[107:DATMOF]2.0.CO;2
 
 #development
 #Rearing data used to estimate lower developmental temperature and growing degree days required and estimate phenology
+#look up our past rearing data
+#Alaska temp dependence of development: Fielding 2004 https://doi.org/10.1603/0046-225X-33.6.1513
+
 
 # ENERGETICS
 # Energy in:
@@ -29,7 +34,18 @@
 
 # FITNESS: We will multiply these additive (fecundity) and multiplicative (survival) components to estimate fitness and the fitness estimates will provide estimates of selection on phenotypes / genotypes. The model could potentially be extended to include a quantitative genetic model of evolution
 
+#Past models
+#Branson 2003 https://doi.org/10.4039/n02-061
 
+#Branson 2008 https://doi.org/10.1665/1082-6467-17.2.259
+
+#Branson 2022 https://doi.org/10.3390/geographies2010003, Wyoming abundance sampling
+
+#Jonas et al 2015 https://doi.org/10.1016/j.rama.2014.12.011
+
+#Fielding 2004 https://doi.org/10.1016/j.ecolmodel.2003.10.014
+
+#Carter et al 1998 https://doi.org/10.1093/ee/27.4.892
 
 #------------------------
 ### LOAD DATA

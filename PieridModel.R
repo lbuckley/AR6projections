@@ -36,13 +36,30 @@ projs=c("bcc-csm","ccsm4","gfdl")
 #LOAD PARAMETERS
 #Demographic parameters
 #Kingsolver 1983 Ecology 64
-OviRate=0.73; # Ovipositing rates: 0.73 eggs/min (Stanton 1980) 
-MaxEggs=700; # Max egg production: 700 eggs (Tabashnik 1980)
-PropFlight= 0.5; # Females spend 50# of available activity time for oviposition-related
-# Watt 1979 Oecologia
+
+# About 2 eggs per minute in Australia and UK, Jones 1987 https://www.jstor.org/stable/4218229
+OviRate=0.5; 
+# Colias ovipositing rates: 0.73 eggs/min (Stanton 1980) #UP
+
+#See egg vs pupal mass relationship Jones et al. 1982, https://doi.org/10.1071/ZO9820223
+MaxEggs=700; # Max egg production, but make dependent on pupal weight
+#Estimates of P. rapae's maximum lifelong fecundity range from 500 to 1200 eggs per female, with as many as 150 eggs laid daily (Baker 1968, Suzuki 1978).
+
+#Eggs laid per day as a function of temperature: Gossard and Jones, https://www.jstor.org/stable/2401827
+
+#PropFlight= 0.5; # Females spend 50# of available activity time for oviposition-related, Colias Watt 1979 Oecologia
+
+#Survival
+#Vancouver survival data in Gossard and Jones, https://www.jstor.org/stable/2401827
+#proportion survivign to age x= 1/(1+0.013*e^(0.28*x))
+#x in D: degree days above 10C
+#Can live weeks
+
+#more survival data: Gilbert and Raworth 1996, https://doi.org/10.4039/Ent1281-1
+#Also INTBIO data
 SurvDaily=0.6; # Daily loss rate for Colias p. eriphyle at Crested Butte, female values
-#Hayes 1981, Data for Colias alexandra at RMBL
-SurvMat=0.014; #1.4# survival to maturity
+SurvMat=0.10; # survival to maturity, Harcourt 2012 https://doi.org/10.4039/Ent98653-6; #UP
+#Survival by stage: Jones Ives 1979  https://doi.org/10.1111/j.1442-9993.1979.tb01199.x
 
 #read/make species data
 solar.abs= 0.65 # Solar absorptivity, proportion
@@ -63,6 +80,7 @@ days<-c(31,28,31,30,31,30,31,31,30,31,30,31) #days in months
 #absorptivity
 abs1=seq(0.4,0.7,0.05)
 
+#model development
 #flight time for Meadii using data from Ward 1977
 #weighted mean and sd for flight date
 flightday.mean=210.95
