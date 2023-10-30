@@ -36,16 +36,55 @@
 
 #Past models
 #Branson 2003 https://doi.org/10.4039/n02-061
+#Cage experiment with Melanoplus sanguinipes in Montana
+#Regressions of eggs laid as a function of digestible biomass (but weird units)
 
 #Branson 2008 https://doi.org/10.1665/1082-6467-17.2.259
+#reproductive correlates in Melanoplus sanguinipes
+
+#Branson 2004 https://doi.org/10.1665/1082-6467(2004)013[0239:RIONAA]2.0.CO;2
+#Reproductive allocation in experiments
 
 #Branson 2022 https://doi.org/10.3390/geographies2010003, Wyoming abundance sampling
 
+# *** De Sousa Santos and Begon 1987 https://www.jstor.org/stable/2389423 
+#Estimates of reproductive energetics for UK grasshopper 
+
+#I. Filin and O. Ovadia . 2007 
+# *** Energetic population model for M. femurrubrum https://doi.org/10.1086/522091 
+
+#Hatle et al 2003 https://doi.org/10.1093/icb/43.5.635
+# *** Reproductive allocation through time
+
 #Jonas et al 2015 https://doi.org/10.1016/j.rama.2014.12.011
+#population dynamic regressions
 
 #Fielding 2004 https://doi.org/10.1016/j.ecolmodel.2003.10.014
+# *** IBM based on resources
+
+#Ackman and Whitman 2008. https://doi.org/10.1665/1082-6467-17.2.249
+# size and fecundity
 
 #Carter et al 1998 https://doi.org/10.1093/ee/27.4.892
+# *** M sanguinipes population model
+# 0.69 eggs produced per degree day greater than 20C
+# egg production factor
+# mortality associated with precipitation
+
+#Hilbert and Logan 1983. development https://doi.org/10.1093/ee/12.1.1
+# *** temperature dependence of development for Melanoplus sanguinipes
+
+#Hilbert and Logan 1983. https://doi.org/10.1016/B978-0-444-42179-1.50041-9 
+# Get book
+
+#Berry et al. 1993. Object-oriented Simulation Model of Rangeland Gmsshopper Population Dynamics 
+#growth parameter food to grasshopper and egg mass
+# ***
+
+#Rodell 1977. A GRASSHOPPER MODEL FOR A GRASSLAND ECOSYSTEM. https://esajournals.onlinelibrary.wiley.com/doi/pdf/10.2307/1935600
+#*** proportion of female bodymass going to eggs per day
+# egg production function
+# low temp and egg viability
 
 #------------------------
 ### LOAD DATA
