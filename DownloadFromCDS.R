@@ -77,7 +77,51 @@ plot(nc.rast)
 plot(nc.sub[1,1,]  )
 
 #----------------
-#CA dynamic downscaling
-#https://loca.ucsd.edu/loca-version-2-for-california-ca-may-2023/
+#WUS-D3
+#https://registry.opendata.aws/wrf-cmip6/
+# browse https://wrf-cmip6-noversioning.s3.amazonaws.com/index.html
+# products: https://dept.atmos.ucla.edu/alexhall/downscaling-cmip6
+# CNRM-ESM2-1 SSP3-7.0 r1i1p1f2 from 2015-2100*
+
+#https://wrf-cmip6-noversioning.s3.amazonaws.com/index.html#downscaled_products/gcm/mpi-esm1-2-hr_r3i1p1f1_historical_bc/6hourly/1980/d03/
+#wrfout_d01_1980-09-01_00:00:00
+
+#Tier3
+#wspd10max.daily.mpi-esm1-2-lr.r71ip1f1.ssp370.d02.2092.nc.
+# /<data_name>/postprocessed/<domain>
+
+#read data from AWS
+#https://blog.djnavarro.net/posts/2022-03-17_using-aws-s3-in-r/
+
+library(aws.s3)
+library(tibble)
+
+bucket_exists(
+  bucket = "s3://wrf-cmip6-noversioning/", 
+  region = "us-west-2"
+)
+
+wus_files <- get_bucket_df(
+  bucket = "s3://wrf-cmip6-noversioning/downscaled_products/gcm/", 
+  region = "us-west-2",
+  max = 20000
+) %>% 
+  as_tibble()
+
+save_object(
+  object = "ReadMe.txt",
+  bucket = "s3://herbariumnsw-pds/", 
+  region = "ap-southeast-2",
+  file = "herbarium/ReadMe.txt"
+)
+
+#tier 3
+# <variable>.daily.<gcm>.<variant>.<exp_id>.<domain>.<year>.nc
+# wspd10max.daily.mpi-esm1-2-lr.r71ip1f1.ssp370.d02.2092.nc
+
+
+
+
+
 
 
