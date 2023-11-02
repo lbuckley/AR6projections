@@ -141,21 +141,21 @@ for (year.k in 1:length(years)){
 
 # read coordinates
 # https://wrf-cmip6-noversioning.s3.amazonaws.com/index.html#downscaled_products/wrf_coordinates/
+
+setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/WUS-D3/")
 coord <- nc_open("wrfinput_d02_coord.nc")
 lon <- ncvar_get(coord,"lon2d");# extracts longitude
 lat <- ncvar_get(coord,"lat2d");# extracts latitude
-lon<- lon[,1]
-lat<- lat[1,]
 
 #download nc files
-for (file.k in 8:length(filenames)){ #length(filenames)
-
-save_object(
-  object = print(filenames[file.k]),
-  bucket = "s3://wrf-cmip6-noversioning/", 
-  region = "us-west-2",
-  file = print(outnames[file.k]))
-}  
+# for (file.k in 8:length(filenames)){ #length(filenames)
+# 
+# save_object(
+#   object = print(filenames[file.k]),
+#   bucket = "s3://wrf-cmip6-noversioning/", 
+#   region = "us-west-2",
+#   file = print(outnames[file.k]))
+# }  
 
 #Read nc in
 setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/WUS-D3/mpi-esm1-2-hr.r3i1p1f1/")
@@ -188,6 +188,7 @@ q2.sub <- ncvar_get(q2, "q2",
 soil_t.sub <- ncvar_get(soil_t, "soil_t", 
                        start = c(lon.ind[1], lat.ind[1], 1, 1),
                        count = c(length(lon.ind),length(lat.ind),4, length(time))) #get 4 soil layers 
+#soil fields are defined on the 4 Noah-MP soil levels of 5, 25, 70, and 150 centimeters
 wspd10mean.sub <- ncvar_get(wspd10mean, "wspd10mean", 
                        start = c(lon.ind[1], lat.ind[1], 1),
                        count = c(length(lon.ind),length(lat.ind),length(time))) 
@@ -213,8 +214,36 @@ wspd10mean.rast<- raster(wspd10mean.sub[,,1], xmn=min(lon[lon.ind]), xmx=max(lon
 sw_sfc.rast<- raster(sw_sfc.sub[,,1], xmn=min(lon[lon.ind]), xmx=max(lon[lon.ind]), ymn=min(lat[lat.ind]), ymx=max(lat[lat.ind]))
 lw_sfc.rast<- raster(lw_sfc.sub[,,1], xmn=min(lon[lon.ind]), xmx=max(lon[lon.ind]), ymn=min(lat[lat.ind]), ymx=max(lat[lat.ind]))
 
+plot(t2min.rast)
 plot(sw_sfc.rast)
 plot(lw_sfc.rast)
+
+#read in bigger area to check
+#map <- raster::getData("GADM",country='USA',level=1)
+
+lon.ind= which(lon[1,]> -125 & lon[1,]< -102) 
+#lon.ind= which(lon>251 & lon<258) 
+lat.ind= which(lat[,1]>22 & lat[,1]<31)
+
+soil_t.sub <- ncvar_get(soil_t, "soil_t", 
+                        start = c(lon.ind[1], lat.ind[1], 1, 1),
+                        count = c(length(lon.ind),length(lat.ind),1, length(time))) 
+
+#account for lat lon matrices
+pts <- cbind(lat=as.vector(lat[lon.ind,lat.ind]), lon=as.vector(lon[lon.ind,lat.ind]), aq=as.vector(soil_t.sub[,,1]))
+r <- rasterFromXYZ(pts)
+plot(r)
+
+#plot out points
+ggplot(data=as.data.frame(pts), aes(x=lon, y=lat, color=aq))+
+  geom_point()
+
+soil_t.rast<- raster(t(soil_t.sub[,,1]), ymn=min(lat[lon.ind,lat.ind]), ymx=max(lat[lon.ind,lat.ind]), xmn=min(lon[lon.ind,lat.ind]), xmx=max(lon[lon.ind,lat.ind]), crs="+init=epsg:4326" )
+#soil_t.rast <- t(soil_t.rast)
+soil_t.rast <- flip(soil_t.rast, direction='y')
+
+plot(soil_t.rast)
+plot(map, add=TRUE)
 
 #----------------------------------------
 #microclimate and biophysical
