@@ -221,29 +221,38 @@ plot(lw_sfc.rast)
 #read in bigger area to check
 #map <- raster::getData("GADM",country='USA',level=1)
 
-lon.ind= which(lon[1,]> -125 & lon[1,]< -102) 
+lon.ind= which(lon[1,]> -125 & lon[1,]< -80) 
 #lon.ind= which(lon>251 & lon<258) 
-lat.ind= which(lat[,1]>22 & lat[,1]<31)
+lat.ind= which(lat[,1]>22 & lat[,1]<50)
 
 soil_t.sub <- ncvar_get(soil_t, "soil_t", 
                         start = c(lon.ind[1], lat.ind[1], 1, 1),
                         count = c(length(lon.ind),length(lat.ind),1, length(time))) 
+#load all
+soil_t.sub <- ncvar_get(soil_t, "soil_t", 
+                        start = c(1, 1, 1, 1),
+                        count = c(length(lon[,1]),length(lat[1,]),1, 2)) 
 
 #account for lat lon matrices
-pts <- cbind(lat=as.vector(lat[lon.ind,lat.ind]), lon=as.vector(lon[lon.ind,lat.ind]), aq=as.vector(soil_t.sub[,,1]))
-r <- rasterFromXYZ(pts)
-plot(r)
+pts <- cbind(lat=as.vector(lat[lon.ind,lat.ind]), lon=as.vector(lon[lon.ind,lat.ind]), temp=as.vector(soil_t.sub[,,1]))
+#load all
+pts <- cbind(lat=as.vector(lat), lon=as.vector(lon), temp=as.vector(soil_t.sub[,,1]))
 
-#plot out points
-ggplot(data=as.data.frame(pts), aes(x=lon, y=lat, color=aq))+
-  geom_point()
+##hangs
+# r <- rasterFromXYZ(pts)
+# plot(r)
 
-soil_t.rast<- raster(t(soil_t.sub[,,1]), ymn=min(lat[lon.ind,lat.ind]), ymx=max(lat[lon.ind,lat.ind]), xmn=min(lon[lon.ind,lat.ind]), xmx=max(lon[lon.ind,lat.ind]), crs="+init=epsg:4326" )
-#soil_t.rast <- t(soil_t.rast)
-soil_t.rast <- flip(soil_t.rast, direction='y')
+#plot out points with state boundaries
+plot1= ggplot(data=as.data.frame(pts), aes(x=lon, y=lat))+
+  geom_point(aes(color=temp))+
+  borders("state")
 
-plot(soil_t.rast)
-plot(map, add=TRUE)
+# #raster plot
+# soil_t.rast<- raster(t(soil_t.sub[,,1]), ymn=min(lat[lon.ind,lat.ind]), ymx=max(lat[lon.ind,lat.ind]), xmn=min(lon[lon.ind,lat.ind]), xmx=max(lon[lon.ind,lat.ind]), crs="+init=epsg:4326" )
+# #soil_t.rast <- t(soil_t.rast)
+# soil_t.rast <- flip(soil_t.rast, direction='y')
+# plot(soil_t.rast)
+# plot(map, add=TRUE)
 
 #----------------------------------------
 #microclimate and biophysical
