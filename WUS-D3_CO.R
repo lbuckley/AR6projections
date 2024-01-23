@@ -179,15 +179,27 @@ for (year.k in 1:1){ #length(years)
   #check order
   lat.flat= flatten(lat[lon.ind,lat.ind], across = c("rows"))
   lon.flat= flatten(lon[lon.ind,lat.ind], across = c("rows"))
-  pts.t= cbind(lat=lat.flat, lon=lon.flat, time=rep(time, 8549))
+  pts.t= cbind(lat=lat.flat, lon=lon.flat)
+  #with time
+  #pts.t= cbind(lat=rep(lat.flat, length(time[1:2])), lon=rep(lon.flat, length(time[1:2])),time=rep(time[1:2], length(lat.flat)))
+               
   
-  clim= cbind(pts.t, t2min= flatten(t2min.sub, across = c("rows", "columns")),
-                    t2max= flatten(t2max.sub, across = c("rows", "columns")),
-                    q2= flatten(q2.sub, across = c("rows", "columns")),
-                    soil_t= flatten(soil_t.sub, across = c("rows", "columns")),
-                    wspd10mean= flatten(wspd10mean.sub, across = c("rows", "columns")),
-                    sw_sfc= flatten(sw_sfc.sub, across = c("rows", "columns")),
-                    lw_sfc= flatten(lw_sfc.sub, across = c("rows", "columns")) 
+  #------------         
+  t2min= flatten(t2min.sub[,,1], across = c("rows"))
+  
+  clim= cbind(pts.t, t2min= t2min)
+  
+  plot.co= ggplot(data=as.data.frame(clim), aes(x=lon, y=lat))+
+    geom_point(aes(color=t2min), size=3)
+  
+  #-----
+  clim= cbind(pts.t, t2min= flatten(t2min.sub[,,1], across = c("rows")),
+                    t2max= flatten(t2max.sub[,,1], across = c("rows")),
+                    q2= flatten(q2.sub[,,1], across = c("rows")),
+                    soil_t= flatten(soil_t.sub[,,1], across = c("rows")),
+                    wspd10mean= flatten(wspd10mean.sub[,,1], across = c("rows")),
+                    sw_sfc= flatten(sw_sfc.sub[,,1], across = c("rows")),
+                    lw_sfc= flatten(lw_sfc.sub[,,1], across = c("rows")) 
                     )
   
   #subset to Colorado points
@@ -201,6 +213,45 @@ for (year.k in 1:1){ #length(years)
    # + borders("state") +xlim(-110,-101) +ylim(36,42)
   
 } #end loop years
+
+
+#extract points in raster
+lat.flat= flatten(lat, across = c("rows"))
+lon.flat= flatten(lon, across = c("rows"))
+pts= cbind(lon=lon.flat, lat=lat.flat)
+
+#alternative strategy of subetting read
+pts.ind= which(pts[,1]> -113 & pts[,1]< -103) 
+pts.s= pts[pts.ind,]
+pts.s= pts.s[which(pts.s[,2]> 34 & pts.s[,2]< 40),]
+
+#-----
+#WORKS
+#make raster brick
+r <- brick(paste("t2min_", years[year.k],".nc", sep=""), varname = "t2min")
+#single time
+r1 <- r[[which(getZ(r)=="20150901")]]
+
+#find indices of nc corresponding to lat lon
+lon.inds= which(lon> -113 & lon< -103)
+
+
+lon.ind= which(lon> -113 & lon< -103,arr.ind = T) 
+lat.ind= which(lat>34 & lat<40,arr.ind = T)
+
+lon.ind.match<- paste(lon.ind[,1], lon.ind[,2], sep=".")
+lat.ind.match<- paste(lat.ind[,1], lat.ind[,2], sep=".")
+matched= na.omit(match(lon.ind.match,lat.ind.match))
+
+inds= lat.ind[matched,]
+
+r2 <- extract(r1, inds)
+lats<- lat[inds]
+lons<- lon[inds]
+
+dat= cbind(lons,lats,r2)
+plot.co= ggplot(data=as.data.frame(dat), aes(x=lons, y=lats))+
+  geom_point(aes(color=r2), size=4)
 
 
 #----------------------------------------
