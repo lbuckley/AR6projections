@@ -87,6 +87,8 @@ lat <- ncvar_get(coord,"lat2d");# extracts latitude
 #---------------------------------
 # Subset to CO
 
+setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/WUS-D3/mpi-esm1-2-hr.r3i1p1f1/")
+
 #find indices to extract
 #make raster brick
 r <- brick(paste("t2min_", years[year.k],".nc", sep=""), varname = "t2min")
@@ -94,8 +96,6 @@ r <- brick(paste("t2min_", years[year.k],".nc", sep=""), varname = "t2min")
 r1 <- r[[which(getZ(r)=="20150901")]]
 
 #find indices of nc corresponding to lat lon
-lon.inds= which(lon> -113 & lon< -103)
-
 lon.ind= which(lon> -113 & lon< -103,arr.ind = T) 
 lat.ind= which(lat>34 & lat<40,arr.ind = T)
 
@@ -107,6 +107,10 @@ co.inds= lat.ind[matched,]
 #corresponding lats and lons
 lats<- lat[inds]
 lons<- lon[inds]
+co.pts= cbind(co.inds, lats, lons)
+
+#make array to hold data
+clim.dat<- array(data = NA, dim = c(366,nrow(co.inds),7), dimnames = NULL)
 
 #retrieve and extract data
 for (year.k in 1:1){ #length(years)
@@ -114,7 +118,7 @@ for (year.k in 1:1){ #length(years)
   t2min <- brick(paste("t2min_", years[year.k],".nc", sep=""), varname = "t2min")
   t2max <- brick(paste("t2max_", years[year.k],".nc", sep=""), varname = "t2max")
   q2 <- brick(paste("q2_", years[year.k],".nc", sep=""), varname = "q2")
-  soil_t <- brick(paste("soil_t_", years[year.k],".nc", sep=""), varname = "soil_t")
+  soil_t <- brick(paste("soil_t_", years[year.k],".nc", sep=""), level=1, varname = "soil_t")
   #get 1st soil layers 
   #soil fields are defined on the 4 Noah-MP soil levels of 5, 25, 70, and 150 centimeters
   wspd10mean <- brick(paste("wspd10mean_", years[year.k],".nc", sep=""), varname = "wspd10mean")
@@ -125,31 +129,92 @@ for (year.k in 1:1){ #length(years)
   times= getZ(t2min)
   
   #yearly times series for a site
-  t1 <- t2min[inds[1,1],inds[1,2]]
+  # t2min[co.inds[1,1],co.inds[1,2]]
   
-  #NEED TO EXTRACT ACROSS TIME
-  t2min <- extract(t2min[[which(getZ(t2min)=="20150901")]], inds)
-  #add other variables
+  #extract one time across sites
+  #t2min <- extract(t2min[[which(getZ(t2min)=="20150901")]], inds)
   
-  #UPDATE
-  #combine
-  dat= cbind(lons,lats,t2min)
+  ##combine
+  #dat= cbind(lons,lats,t2min)
   
-  #test plot
-  plot.co= ggplot(data=as.data.frame(dat), aes(x=lons, y=lats))+
-    geom_point(aes(color=t2min), size=4)
+  ##test plot
+  #plot.co= ggplot(data=as.data.frame(dat), aes(x=lons, y=lats))+
+  #  geom_point(aes(color=t2min), size=4)
+  
+  #store data across sites
+  #just 10 for now
+ clim.dat[1:length(times),1:10,1]<- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) t2min[x[1],x[2]])
+  clim.dat[1:length(times),1:10,2] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) t2max[x[1],x[2]])
+  clim.dat[1:length(times),1:10,3] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) q2[x[1],x[2]])
+  clim.dat[1:length(times),1:10,4] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) soil_t[x[1],x[2]])   
+  clim.dat[1:length(times),1:10,5] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) wspd10mean[x[1],x[2]])
+  clim.dat[1:length(times),1:10,6] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) sw_sfc[x[1],x[2]])
+  clim.dat[1:length(times),1:10,7] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) lw_sfc[x[1],x[2]])
+  #Check issue with radiation
+  
+  #slow across sites
+  #clim.dat[1:length(times),1:1000,1]<- apply(co.inds[1:1000,], MARGIN=1, FUN=function(x) t2min[x[1],x[2]])
   
 } #end loop years
 
 #----------------------------------------
 #microclimate and biophysical
 
-#apply nichemaper
-
-install.packages("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/NicheMapR_3.2.1.tgz", repos = NULL, 
-                 type = .Platform$pkgType)
+#install.packages("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/NicheMapR_3.2.1.tgz", repos = NULL, type = .Platform$pkgType)
 library(NicheMapR)
+library(TrenchR)
 
+#go through sites
+site.k<- 1
+doys<- 1:365
+
+#MICROCLIMATE
+#NicheMapR microclimate model
+#https://github.com/mrke/NicheMapR/blob/master/R/microrun.R
+
+#time of sunrise and sunset
+daylengths<- sapply(doys, FUN= daylength, lat= co.pts[site.k,3])
+solarnoons<- sapply(doys, FUN= solar_noon, lon= co.pts[site.k,4])
+
+t_r= solarnoons - daylengths/2
+t_s= solarnoons + daylengths/2
+
+#diurnal temperature variation
+#combine input
+cdat<- cbind(clim.dat[1:365,site.k,c(1,2,6)], t_r, t_s)
+#integrate lw and sw
+
+clim.dat[1:length(times),1:10,1]
+
+Thr<- sapply(doys, FUN= function(x) diurnal_temp_variation_sineexp(T_max=x[2]+10, T_min=x[1], t=1:24, t_r=x[4], t_s=x[5], alpha = 1.52, beta = 2.00, gamma = -0.18))
+
+diurnal_temp_variation_sineexp(
+  T_max,
+  T_min,
+  t,
+  t_r,
+  t_s,
+  alpha = 1.52,
+  beta = 2.00,
+  gamma = -0.18
+)
+# CO values, https://trenchproject.github.io/TrenchR/reference/diurnal_temp_variation_sineexp.html
+
+#diurnal solar variation
+diurnal_radiation_variation(doy, S, hour, lon, lat)
+
+#estimate zenith angle
+dat$psi <- zenith_angle(doy = dat$J, lat = dat$lat, lon = dat$lon, hour = dat$hour)
+
+z <- 0.001 #specify distance from ground 
+
+# scale temperature 
+dat$Tgrass <- air_temp_profile(T_r = dat$Temp, u_r = dat$Wind, zr = 0.5, z0 = 0.02, z = z, T_s = dat$SoilTemp)
+
+# scale wind speed
+dat$Ugrass <- wind_speed_profile_neutral(u_r = dat$Wind, zr = 0.5, z0 = 0.02, z = z)
+
+#BIOPHYSICAL
 # FUN_ecto
 # https://github.com/mrke/NicheMapR/blob/master/R/FUN_ecto.R
 
@@ -157,6 +222,7 @@ library(NicheMapR)
 #scale to organism height
 #biophysical model: air, surface temp, windspeed, windspeed, solar radiation
 
+dat$Te <- Tb_grasshopper(T_a = dat$Tgrass, T_g = dat$SoilTemp, u = dat$Ugrass, S = dat$Rad, K_t = 1, psi = dat$psi, l = 0.0211, Acondfact = 0.0, abs = 0.9, r_g = 0.5) 
 
 
 
