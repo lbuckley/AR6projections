@@ -91,7 +91,7 @@ setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/WUS-D3/mpi-esm1
 
 #find indices to extract
 #make raster brick
-r <- brick(paste("t2min_", years[year.k],".nc", sep=""), varname = "t2min")
+r <- brick(paste("t2min_", years[1],".nc", sep=""), varname = "t2min")
 #single time
 r1 <- r[[which(getZ(r)=="20150901")]]
 
@@ -104,9 +104,10 @@ lat.ind.match<- paste(lat.ind[,1], lat.ind[,2], sep=".")
 matched= na.omit(match(lon.ind.match,lat.ind.match))
 
 co.inds= lat.ind[matched,]
+
 #corresponding lats and lons
-lats<- lat[inds]
-lons<- lon[inds]
+lats<- lat[co.inds]
+lons<- lon[co.inds]
 co.pts= cbind(co.inds, lats, lons)
 
 #make array to hold data
@@ -125,14 +126,36 @@ for (year.k in 1:1){ #length(years)
   sw_sfc <- brick(paste("sw_sfc_", years[year.k],".nc", sep=""), varname = "sw_sfc")
   lw_sfc <- brick(paste("lw_sfc_", years[year.k],".nc", sep=""), varname = "lw_sfc")
   
-  #extract times
+  # #extract times
   times= getZ(t2min)
   
-  #yearly times series for a site
-  # t2min[co.inds[1,1],co.inds[1,2]]
+  # #yearly times series for a site
+  # t2min1<- t2min[co.inds[1,1],co.inds[1,2]]
+  # t2max1<- t2max[co.inds[1,1],co.inds[1,2]]
+  # q21<- q2[co.inds[1,1],co.inds[1,2]]
+  # soil_t1<- soil_t[co.inds[1,1],co.inds[1,2]]
+  # wspd10mean1<- wspd10mean[co.inds[1,1],co.inds[1,2]]
+  # sw_sfc1<- extract(sw_sfc, co.inds[1]) #sw_sfc[co.inds[1,1],co.inds[1,2]]
+  # lw_sfc1<- extract(lw_sfc, co.inds[1]) #lw_sfc[co.inds[1,1],co.inds[1,2]]
+  # 
+  # #temps
+  # plot(1:366, t2min1, type="l", col="blue")
+  # points(1:366, t2max1, type="l", col="red")
+  # points(1:366, soil_t1, type="l", col="green")
+  # 
+  # #humidity and windspeed
+  # plot(1:366, q21, type="l", col="blue", ylim=c(2,18))
+  # points(1:366, wspd10mean1, type="l", col="red")
+  # 
+  # #solar radiation
+  # plot(1:366, sw_sfc1, type="l", col="blue")
+  # points(1:366, lw_sfc1, type="l", col="red")
+  
+  #---------------------
   
   #extract one time across sites
   #t2min <- extract(t2min[[which(getZ(t2min)=="20150901")]], inds)
+  #sw_sfc1 <- extract(sw_sfc[[which(getZ(t2min)=="20150901")]], inds)
   
   ##combine
   #dat= cbind(lons,lats,t2min)
@@ -148,9 +171,12 @@ for (year.k in 1:1){ #length(years)
   clim.dat[1:length(times),1:10,3] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) q2[x[1],x[2]])
   clim.dat[1:length(times),1:10,4] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) soil_t[x[1],x[2]])   
   clim.dat[1:length(times),1:10,5] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) wspd10mean[x[1],x[2]])
-  clim.dat[1:length(times),1:10,6] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) sw_sfc[x[1],x[2]])
-  clim.dat[1:length(times),1:10,7] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) lw_sfc[x[1],x[2]])
+  #clim.dat[1:length(times),1:10,6] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) sw_sfc[x[1],x[2]])
+  #clim.dat[1:length(times),1:10,7] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) lw_sfc[x[1],x[2]])
   #Check issue with radiation
+  rad= apply(co.inds[1:10,], MARGIN=1, FUN=function(x) extract(sw_sfc, x) )
+  clim.dat[1:length(times),1:10,6] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) extract(sw_sfc, x)[1,] )
+  clim.dat[1:length(times),1:10,7] <- apply(co.inds[1:10,], MARGIN=1, FUN=function(x) extract(lw_sfc, x)[2,] )
   
   #slow across sites
   #clim.dat[1:length(times),1:1000,1]<- apply(co.inds[1:1000,], MARGIN=1, FUN=function(x) t2min[x[1],x[2]])
@@ -179,40 +205,41 @@ solarnoons<- sapply(doys, FUN= solar_noon, lon= co.pts[site.k,4])
 t_r= solarnoons - daylengths/2
 t_s= solarnoons + daylengths/2
 
-#diurnal temperature variation
-#combine input
-cdat<- cbind(clim.dat[1:365,site.k,c(1,2,6)], t_r, t_s)
-#integrate lw and sw
-
-clim.dat[1:length(times),1:10,1]
-
-Thr<- sapply(doys, FUN= function(x) diurnal_temp_variation_sineexp(T_max=x[2]+10, T_min=x[1], t=1:24, t_r=x[4], t_s=x[5], alpha = 1.52, beta = 2.00, gamma = -0.18))
-
-diurnal_temp_variation_sineexp(
-  T_max,
-  T_min,
-  t,
-  t_r,
-  t_s,
-  alpha = 1.52,
-  beta = 2.00,
-  gamma = -0.18
-)
-# CO values, https://trenchproject.github.io/TrenchR/reference/diurnal_temp_variation_sineexp.html
-
-#diurnal solar variation
-diurnal_radiation_variation(doy, S, hour, lon, lat)
-
-#estimate zenith angle
-dat$psi <- zenith_angle(doy = dat$J, lat = dat$lat, lon = dat$lon, hour = dat$hour)
-
+# scale temperature from two meters
 z <- 0.001 #specify distance from ground 
-
-# scale temperature 
-dat$Tgrass <- air_temp_profile(T_r = dat$Temp, u_r = dat$Wind, zr = 0.5, z0 = 0.02, z = z, T_s = dat$SoilTemp)
+Tminz <- air_temp_profile(T_r = clim.dat[1:365,site.k,c(1)], u_r = clim.dat[1:365,site.k,c(5)], zr = 2, z0 = 0.02, z = z, T_s = clim.dat[1:365,site.k,c(4)])
+Tmaxz <- air_temp_profile(T_r = clim.dat[1:365,site.k,c(2)], u_r = clim.dat[1:365,site.k,c(5)], zr = 2, z0 = 0.02, z = z, T_s = clim.dat[1:365,site.k,c(4)])
+#check surface roughness
 
 # scale wind speed
-dat$Ugrass <- wind_speed_profile_neutral(u_r = dat$Wind, zr = 0.5, z0 = 0.02, z = z)
+Uz <- wind_speed_profile_neutral(u_r = clim.dat[1:365,site.k,c(5)], zr = 2, z0 = 0.02, z = z)
+
+#plot
+plot(1:365, clim.dat[1:365,site.k,c(1)], col="blue", type="l")
+points(1:365, Tminz, col="blue", lty="dashed", type="l")
+points(1:365, clim.dat[1:365,site.k,c(1)], col="red", type="l")
+points(1:365, Tminz, col="red", lty="dashed", type="l")
+#max and min close
+
+#combine input
+cdat<- cbind(clim.dat[1:365,site.k,c(1,2,6)], t_r, t_s, 1:365)
+#Tmin, Tmax, sw
+
+#diurnal temperature variation
+##use sine exp, need to fix Gamma
+#Thr<- apply(cdat, MARGIN=1, FUN= function(x) diurnal_temp_variation_sineexp(T_max=x[2], T_min=x[1], t=1:24, t_r=x[4], t_s=x[5])) #, alpha = 1.52, beta = 2.00, gamma = -0.18
+# CO values, https://trenchproject.github.io/TrenchR/reference/diurnal_temp_variation_sineexp.html
+#use sine
+Thr<- apply(cdat, MARGIN=1, FUN= function(x) diurnal_temp_variation_sine(T_max=x[2], T_min=x[1], t=1:24))
+
+#DTR foe soil
+
+#diurnal solar variation
+Shr<- apply(cdat, MARGIN=1, FUN= function(x) unlist(diurnal_radiation_variation(doy=x[6], S=x[3], hour=1:24, lon=co.pts[site.k,"lons"], lat=co.pts[site.k,"lats"])))
+#need to fix format
+
+#estimate zenith angle
+psi<- apply(cdat, MARGIN=1, FUN= function(x) zenith_angle(doy = x[6], lat=co.pts[site.k,"lats"], lon=co.pts[site.k,"lons"], hour = 1:24))
 
 #BIOPHYSICAL
 # FUN_ecto
@@ -222,8 +249,20 @@ dat$Ugrass <- wind_speed_profile_neutral(u_r = dat$Wind, zr = 0.5, z0 = 0.02, z 
 #scale to organism height
 #biophysical model: air, surface temp, windspeed, windspeed, solar radiation
 
-dat$Te <- Tb_grasshopper(T_a = dat$Tgrass, T_g = dat$SoilTemp, u = dat$Ugrass, S = dat$Rad, K_t = 1, psi = dat$psi, l = 0.0211, Acondfact = 0.0, abs = 0.9, r_g = 0.5) 
+#add data to cdat
+#loop through hours
 
+#for(hr in 1:24){
+hr=10
+
+  #combine data for hours
+  gdat= cbind(Thr[hr,], clim.dat[1:365,site.k,c(4)], Uz, clim.dat[1:365,site.k,6], psi[hr,])  
+  #fix radiation
+  
+Te <- apply(gdat, MARGIN=1, FUN= function(x) Tb_grasshopper(T_a = x[1], T_g = x[2], u = x[3], S = x[4], K_t = 1, psi = x[5], l = 0.0211, Acondfact = 0.0, abs = 0.9, r_g = 0.5))
+
+plot(1:365, Te)
+            
 
 
 
