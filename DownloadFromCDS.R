@@ -52,7 +52,7 @@ plot(nc.sub[1,1,]  )
 #MACA statistically downscaled
 #https://toolkit.climate.gov/tool/maca-cmip5-statistically-downscaled-climate-projections
 #https://www.climatologylab.org/maca.html
-#https://www.climatologylab.org/maca.html
+#daily 6km or 4km
 
 setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/MACA/")
 
@@ -65,11 +65,29 @@ time <- ncvar_get(nc.daily,"time");# extracts time
 lon.ind= which(lon>251 & lon<258) 
 lat.ind= which(lat>37 & lat<41)
 
+#all sites, one time
+nc.sub <- ncvar_get(nc.daily, "air_temperature",
+                    start = c(1, 1, 1),
+                    count = c(length(lon),length(lat),1)) #abbreviate time
+
+nc.rast<- raster(nc.sub, ymn=min(lon), ymx=max(lon), xmn=min(lat), xmx=max(lat))
+nc.rast<- t(flip(nc.rast, 1))
+
+#one site, all times
+nc.sub <- ncvar_get(nc.daily, "air_temperature",
+                    start = c(200, 200, 1),
+                    count = c(1,1,length(time))) #abbreviate time
+plot(1:length(time), nc.sub, type="l")
+#how is time coded?
+
+#--
 nc.sub <- ncvar_get(nc.daily, "air_temperature",
                     start = c(lon.ind[1], lat.ind[1], 1),
                     count = c(length(lon.ind),length(lat.ind),500)) #abbreviate time
 
-nc.rast<- raster(nc.sub[,,1], xmn=min(lon[lon.ind]), xmx=max(lon[lon.ind]), ymn=min(lat[lat.ind]), ymx=max(lat[lat.ind]))
+
+
+nc.rast<- raster(nc.sub, xmn=min(lon[lon.ind]), xmx=max(lon[lon.ind]), ymn=min(lat[lat.ind]), ymx=max(lat[lat.ind]))
 
 plot(nc.rast)
 
@@ -253,6 +271,66 @@ plot1= ggplot(data=as.data.frame(pts), aes(x=lon, y=lat))+
 # soil_t.rast <- flip(soil_t.rast, direction='y')
 # plot(soil_t.rast)
 # plot(map, add=TRUE)
+
+#---------------
+#OTHER APPROACHES
+
+#GEB 2019 approach
+
+#We used gridded projections of daily minimum and maximum air temperature (°C, 2 m height) for 1950–2099 from the CMIP5 multi-model ensemble. 
+#The projections were statistically downscaled to 1/8° latitude–longitude (c. 12 km by 12 km) resolution using daily bias correction and constructed analogues (bias correction constructed analogs (BCCA) method) 5 archive at http://gdo-dcp.ucllnl.org/downscaled_cmip_projections/). 
+
+#We estimated butterfly body temperatures (see Section 2.4) additionally using hourly microclimate data from the microclim dataset (Kearney, Isaac, & Porter, 2014); we used monthly climate normals (1960–1990) at 15 km resolution for substrate temperatures in 0 and 100% shade (°C), wind speed at the surface (1 cm, m/s) and solar zenith angle (°). We thus assume these conditions do not shift over time.
+
+#---------------
+#ISIMIP
+#https://www.isimip.org/
+
+#for Butterflies?
+#0.5 degree resolution
+#https://www.isimip.org/gettingstarted/input-data-bias-adjustment/details/103/
+#https://www.isimip.org/gettingstarted/input-data-bias-adjustment/details/102/
+#Download from: https://data.isimip.org/search/tree/ISIMIP3b/SecondaryInputData/climate/atmosphere/mpi-esm1-2-hr/
+
+setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/ISIMIP/")
+
+tasmax= nc_open("mpi-esm1-2-hr_r1i1p1f1_w5e5_ssp245_tasmax_global_daily_2021_2030.nc")
+
+time <- ncvar_get(tasmax,"time");# extracts time, days
+lon <- ncvar_get(tasmax,"lon");# extracts longitude
+lat <- ncvar_get(tasmax,"lat");# extracts latitude
+
+lon.ind= which(lon> -130 & lon< -60) 
+lat.ind= which(lat>20 & lat<50)
+
+#1 time all sites
+tasmax.us <- ncvar_get(t2min, "t2min", 
+                       start = c(lon.ind[1], lat.ind[1], 1),
+                       count = c(length(lon.ind),length(lat.ind),1)) 
+
+nc.rast<- raster(tasmax.us, ymn=min(lon[lon.ind]), ymx=max(lon[lon.ind]), xmn=min(lat[lat.ind]), xmx=max(lat[lat.ind]))
+nc.rast<- t(flip(nc.rast, 1))
+
+plot(nc.rast)
+
+plot(out, add=T)
+
+library(geodata)
+
+
+library(rgdal)
+states <- readOGR('ne_50m_admin_1_states_provinces/ne_50m_admin_1_states_provinces.shp')
+
+library(rasterVis)
+library(sp)
+
+# Download States boundaries (might take time)
+out <- getData('GADM', country='United States', level=1)
+
+# Plot raster and California:
+levelplot(nc.rast) + 
+  layer(sp.polygons(out))
+
 
 #----------------------------------------
 #microclimate and biophysical

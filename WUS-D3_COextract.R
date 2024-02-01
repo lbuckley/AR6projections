@@ -4,6 +4,7 @@ library(terra)
 library(fields)
 library(ramify)
 
+#DOWNLOAD DATA
 #WUS-D3
 #https://registry.opendata.aws/wrf-cmip6/
 # browse https://wrf-cmip6-noversioning.s3.amazonaws.com/index.html
@@ -85,6 +86,7 @@ lat <- ncvar_get(coord,"lat2d");# extracts latitude
 # }  
 
 #---------------------------------
+#Process data
 # Subset to CO
 
 setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/WUS-D3/mpi-esm1-2-hr.r3i1p1f1/")
@@ -232,7 +234,7 @@ cdat<- cbind(clim.dat[1:365,site.k,c(1,2,6)], t_r, t_s, 1:365)
 #use sine
 Thr<- apply(cdat, MARGIN=1, FUN= function(x) diurnal_temp_variation_sine(T_max=x[2], T_min=x[1], t=1:24))
 
-#DTR foe soil
+#DTR for soil
 
 #diurnal solar variation
 Shr<- apply(cdat, MARGIN=1, FUN= function(x) unlist(diurnal_radiation_variation(doy=x[6], S=x[3], hour=1:24, lon=co.pts[site.k,"lons"], lat=co.pts[site.k,"lats"])))
