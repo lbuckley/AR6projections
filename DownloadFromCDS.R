@@ -292,6 +292,14 @@ plot1= ggplot(data=as.data.frame(pts), aes(x=lon, y=lat))+
 #https://www.isimip.org/gettingstarted/input-data-bias-adjustment/details/102/
 #Download from: https://data.isimip.org/search/tree/ISIMIP3b/SecondaryInputData/climate/atmosphere/mpi-esm1-2-hr/
 
+# #variables
+# sfcWind: near-surface wind speed
+# tasmin, tasmax, tas: daily min, max, ave temp
+# rlds: long wave downwelling radiation
+# rsds: short wave downwelling radiation 
+# pr: tota
+#hurs, huss: near surface-relative, specific humidity, 
+
 setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/ISIMIP/")
 
 tasmax= nc_open("mpi-esm1-2-hr_r1i1p1f1_w5e5_ssp245_tasmax_global_daily_2021_2030.nc")
@@ -304,33 +312,13 @@ lon.ind= which(lon> -130 & lon< -60)
 lat.ind= which(lat>20 & lat<50)
 
 #1 time all sites
-tasmax.us <- ncvar_get(t2min, "t2min", 
+tasmax.us <- ncvar_get(tasmax, "tasmax", 
                        start = c(lon.ind[1], lat.ind[1], 1),
                        count = c(length(lon.ind),length(lat.ind),1)) 
 
 nc.rast<- raster(tasmax.us, ymn=min(lon[lon.ind]), ymx=max(lon[lon.ind]), xmn=min(lat[lat.ind]), xmx=max(lat[lat.ind]))
-nc.rast<- t(flip(nc.rast, 1))
-
+nc.rast<-t(nc.rast) #(flip(nc.rast, 1))
 plot(nc.rast)
-
-plot(out, add=T)
-
-library(geodata)
-
-
-library(rgdal)
-states <- readOGR('ne_50m_admin_1_states_provinces/ne_50m_admin_1_states_provinces.shp')
-
-library(rasterVis)
-library(sp)
-
-# Download States boundaries (might take time)
-out <- getData('GADM', country='United States', level=1)
-
-# Plot raster and California:
-levelplot(nc.rast) + 
-  layer(sp.polygons(out))
-
 
 #----------------------------------------
 #microclimate and biophysical
@@ -348,8 +336,33 @@ library(NicheMapR)
 #scale to organism height
 #biophysical model: air, surface temp, windspeed, windspeed, solar radiation
 
-
-
+#FiX gamma constraint on DTR
+diurnal_temp_variation_sineexp<- function (T_max, T_min, t, t_r, t_s, alpha = 2.59, beta = 1.55, 
+          gamma = 2.2) 
+{
+  stopifnot(T_max >= T_min, t_s >= 0, t_s <= 24, t_r >= 0, 
+            t_r <= 24, t >= 0, t <= 24)
+  l <- t_s - t_r
+  t_x <- 0.5 * (t_r + t_s) + alpha
+  t_n <- t_r + beta
+  if (!(t > (t_r + beta) & t < t_s)) {
+    T_sn <- T_min + (T_max - T_min) * sin((pi * (t_s - t_r - 
+                                                   beta))/(l + 2 * (alpha - beta)))
+    if (t <= (t_r + beta)) {
+      t_as <- t + 24 - t_s
+    }
+    if (t >= t_s) {
+      t_as <- t - t_s
+    }
+    Temp <- T_min + (T_sn - T_min) * exp(-(gamma * t_as)/(24 - 
+                                                            l + beta))
+  }
+  else {
+    Temp <- T_min + (T_max - T_min) * sin((pi * (t - t_r - 
+                                                   beta))/(l + 2 * (alpha - beta)))
+  }
+  Temp
+}
 
 
 

@@ -77,7 +77,7 @@
 #Hilbert and Logan 1983. https://doi.org/10.1016/B978-0-444-42179-1.50041-9 
 # Get book
 
-#Berry et al. 1993. Object-oriented Simulation Model of Rangeland Gmsshopper Population Dynamics 
+#Berry et al. 1993. Object-oriented Simulation Model of Rangeland Grasshopper Population Dynamics 
 #growth parameter food to grasshopper and egg mass
 # ***
 
