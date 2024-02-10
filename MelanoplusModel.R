@@ -20,6 +20,18 @@
 #   
 #   Energy use:
 #   Metabolic rate, accounting for elevation due to activity?
+# temperature dependence of MR (ml CO2/hr): https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/1365-2656.12083
+# converted into lipid consumed based on a 2L O2 consumed for every 1g of lipid consumed
+#assume respiratory quotient of 0.7 for lipids update
+#converted to energy use assuming 39 kJ g^−1 lipid
+
+bs.ms<- c(0.90, 0.48, 8.68 * 10^{-5})
+bs.md<- c(0.98, 0.48, 1.24 * 10^{-4})
+
+vCO2= function(M, Tb, elev_m) exp(b1*log(M)+b2*(1/(k*Tb))+b3*elev_m)
+lipid.g= function(vCO) (0.7*vCo2/2)
+
+
 #   Assume portion of energy allocated to maintenance, reproduction
 # [Needs: estimation approach; based on lipid content?
 #     
