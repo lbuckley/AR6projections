@@ -155,16 +155,16 @@ for (year.k in 1:1){ #length(years)
   
   #---------------------
   
-  #extract one time across sites
-  #t2min <- extract(t2min[[which(getZ(t2min)=="20150901")]], inds)
-  #sw_sfc1 <- extract(sw_sfc[[which(getZ(t2min)=="20150901")]], inds)
-  
-  ##combine
-  #dat= cbind(lons,lats,t2min)
-  
-  ##test plot
-  #plot.co= ggplot(data=as.data.frame(dat), aes(x=lons, y=lats))+
-  #  geom_point(aes(color=t2min), size=4)
+  # ##extract one time across sites
+  # t2min <- extract(t2min[[which(getZ(t2min)=="20150901")]], co.inds)
+  # sw_sfc1 <- extract(sw_sfc[[which(getZ(t2min)=="20150901")]], co.inds)
+  # 
+  # ##combine
+  # dat= cbind(lons,lats,t2min)
+  # 
+  # ##test plot
+  # plot.co= ggplot(data=as.data.frame(dat), aes(x=lons, y=lats))+
+  #   geom_point(aes(color=t2min), size=4)
   
   #store data across sites
   #just 10 for now
