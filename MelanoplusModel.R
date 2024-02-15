@@ -7,6 +7,7 @@ library(PCICt)
 #install.packages("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/NicheMapR_3.2.1.tgz", repos = NULL, type = .Platform$pkgType)
 library(NicheMapR)
 library(TrenchR)
+library(tidyr)
 
 #Read species data
 setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/FitnessContrib_JEB/data/Data/Grasshopper/")
@@ -18,9 +19,12 @@ site.list= c("Eldorado","A1","B1","C1")
 # Jumping TPC parameters
 tpc.dat= read.csv("JumpTPCparams.csv")
 
-#Calculate mass and length, m and g? 
-dat$mass_dodg= 1-1.64*10^-4*3048 #*dat$Elev
-dat$L_dodg= exp(3.33*0.247*log(dat$mass_dodg))
+#sites
+#Chautauqua Mesa (1,752 m, 40.00N, 105.28W), A1 (2,195 m, 40.01N, 105.37W), B1 (2,591 m, 40.02N, 105.43W), C1 (3,048 m, 40.03N, 105.55W)
+
+##Calculate mass and length, m and g? 
+#dat$mass_dodg= 1-1.64*10^-4*3048 #*dat$Elev
+#dat$L_dodg= exp(3.33*0.247*log(dat$mass_dodg))
 
 #==================================================
 #read climate data
@@ -142,9 +146,6 @@ for (year.k in 7:length(years) ){ #length(years)
   clim.dat[1:length(times),,6, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) extract(sw_sfc, x)[1,] )
   clim.dat[1:length(times),,7, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) extract(lw_sfc, x)[2,] )
   
-  #slow across sites
-  #clim.dat[1:length(times),1:1000,1]<- apply(co.inds[1:1000,], MARGIN=1, FUN=function(x) t2min[x[1],x[2]])
-  
 #-------
 
 #microclimate and biophysical
@@ -221,16 +222,11 @@ Te.dat[site.k, year.k, 1:365, hr] <- apply(gdat, MARGIN=1, FUN= function(x) Tb_g
 
 #save data
 setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperRoL/data/")
-clim.dat
-Te.dat
-Th.dat
+#saveRDS(clim.dat, file = "climdat.rds")
+#saveRDS(Te.dat, file = "Tedat.rds")
+#saveRDS(Th.dat, file = "Thdat.rds")
 
-# Save an object to a file
-saveRDS(clim.dat, file = "climdat.rds")
-saveRDS(Te.dat, file = "Tedat.rds")
-saveRDS(Th.dat, file = "Thdat.rds")
-
-# # Restore the object
+# Restore the object
 # clim.dat<- readRDS(file = "climdat.rds")
 # Te.dat<- readRDS(file = "Tedat.rds")
 # Th.dat<- readRDS(file = "Thdat.rds")
@@ -241,8 +237,8 @@ saveRDS(Th.dat, file = "Thdat.rds")
 #look up our past rearing data
 #M. sanuinipes, Hilbert and Logan 1983
 
-#T is in Kelvin
-dr= function(T, alpha=0.0455, beta=8814.36, gamma=-14877.95, delta=298.81, lambda=47258.52, theta=316.695, R=1.987){
+#Development as a proportion per day as a function of T (Kelvin)
+devel.prop= function(T, alpha=0.0455, beta=8814.36, gamma=-14877.95, delta=298.81, lambda=47258.52, theta=316.695, R=1.987){
   alpha*(T/298)*exp((beta/R)*(1/298 - 1/T))/(1+exp((gamma/R)*(1/delta - 1/T))+exp((lambda/R)*(1/theta - 1/T)))}
 
 # ENERGETICS
@@ -264,9 +260,7 @@ tpc.perf= function(T,Topt,CTmin, CTmax){
   return(F)
 }
 
-#plot(1:50, tpc.perf(1:50, Topt=30, CTmin=10, CTmax=40))
-
-TPC.gausgomp= function(T, To, rho=0.9, sigma, Fmax) Fmax*exp(-exp(rho*(T-To)-6)-sigma*(T-To)^2) # rho and sigma determine, the thermal sensitivity of feeding at temperatures above and below Topt, respectively
+#plot(1:50, tpc.perf(1:50, Topt=spec.dat[1,"PBT"], CTmin=spec.dat[1,"CTmin"], CTmax=spec.dat[1,"CTmax"]))
 
 #   Energy use:
 #   Metabolic rate, accounting for elevation due to activity?
@@ -275,11 +269,10 @@ TPC.gausgomp= function(T, To, rho=0.9, sigma, Fmax) Fmax*exp(-exp(rho*(T-To)-6)-
 #assume respiratory quotient of 0.7 for lipids update
 #converted to energy use assuming 39 kJ g^−1 lipid
 
-bs.ms<- c(0.90, 0.48, 8.68 * 10^{-5})
-bs.mb<- c(0.98, 0.48, 1.24 * 10^{-4})
+vCO2= function(M, Tb, elev_m, b0, b1, b2, b3, k=8.62*10^-5) exp(b0 +b1*log(M)+b2*(1/(k*(Tb+273.15)))+b3*elev_m)
+lipid.g= function(vCO2) (0.7*vCO2/2)
 
-vCO2= function(M, Tb, elev_m, b1, b2, b3, k=8.62*10^-5) exp(b1*log(M)+b2*(1/(k*Tb))+b3*elev_m)
-lipid.g= function(vCO) (0.7*vCo2/2)
+plot(1:60, vCO2(M=spec.dat[1,"Massg_C1"], 1:60, elev_m=3048, b0=spec.dat[1,"b0"], b1=spec.dat[1,"b1"], b2=spec.dat[1,"b2"], b3=spec.dat[1,"b3"]) )
 
 #   Assume portion of energy allocated to maintenance, reproduction
 # [Needs: estimation approach; based on lipid content?
@@ -295,47 +288,14 @@ lipid.g= function(vCO) (0.7*vCo2/2)
 #Mass of eggs
 #Number of eggs
 #https://github.com/lbuckley/HopperPhenology/blob/master/HopperClinesForGenetics.R
-setwd("/Volumes/GoogleDrive/My Drive/AlexanderResurvey/TPCfield/data")
-egg= read.csv("LevyNufioData.csv")
-size= read.csv("Levy_Male&FemaleBodySizesGradient.csv")
+setwd("/Volumes/GoogleDrive/My Drive/GrasshopperData/TPCfield/data/")
+#egg= read.csv("LevyNufioData.csv")
+#size= read.csv("Levy_Male&FemaleBodySizesGradient.csv")
 repro= read.csv("Levy_FemaleGradientDataGrasshopper.csv")
 
-repro2= repro %>% group_by(Site,Elevation, Species) %>% summarise(clutch=mean(Clutch.Size, na.rm=TRUE), clutch.N= length(na.omit(Clutch.Size)),clutch.sd=sd(Clutch.Size, na.rm=TRUE), clutch.se=clutch.sd/sqrt(clutch.N),
-                                                                  egg.mass=mean(Mean.Egg.Mass, na.rm=TRUE), egg.mass.N= length(na.omit(Mean.Egg.Mass)),egg.mass.sd=sd(Mean.Egg.Mass, na.rm=TRUE), egg.mass.se=egg.mass.sd/sqrt(egg.mass.N),
-                                                                  Novarioles=mean(Number.Ovarioles, na.rm=TRUE), Novarioles.N= length(na.omit(Number.Ovarioles)),Novarioles.sd=sd(Number.Ovarioles, na.rm=TRUE), Novarioles.se=Novarioles.sd/sqrt(Novarioles.N),
-                                                                  NFovarioles=mean(Number.Functioing.Ovarioles, na.rm=TRUE), NFovarioles.N= length(na.omit(Number.Functioing.Ovarioles)),NFovarioles.sd=sd(Number.Functioing.Ovarioles, na.rm=TRUE), NFovarioles.se=NFovarioles.sd/sqrt(NFovarioles.N),
-                                                                  PFovarioles=mean(Proportion.Functioning.Ovarioles, na.rm=TRUE), PFovarioles.N= length(na.omit(Proportion.Functioning.Ovarioles)),PFovarioles.sd=sd(Proportion.Functioning.Ovarioles, na.rm=TRUE), PFovarioles.se=PFovarioles.sd/sqrt(PFovarioles.N), 
-                                                                  clutch.mass=mean(clutch.weight.g, na.rm=TRUE), clutch.mass.N= length(na.omit(clutch.weight.g)),clutch.mass.sd=sd(clutch.weight.g, na.rm=TRUE), clutch.mass.se=clutch.mass.sd/sqrt(clutch.mass.N) )
+repro2= as.data.frame(repro) %>% group_by(Site,Elevation, Species) %>% summarise(clutch=mean(Clutch.Size, na.rm=TRUE), egg.mass=mean(Mean.Egg.Mass, na.rm=TRUE), Novarioles=mean(Number.Ovarioles, na.rm=TRUE), NFovarioles=mean(Number.Functioing.Ovarioles, na.rm=TRUE), PFovarioles=mean(Proportion.Functioning.Ovarioles, na.rm=TRUE), clutch.mass=mean(clutch.weight.g, na.rm=TRUE) )
 
-#--------------
-sp.col<-c("A. clavatus"="yellow",  "M. boulderensis"="#fecc5c", "C. pellucida"="#fd8d3c","M. sanguinipes"="#e31a1c")  
-repro2$Species= factor(repro2$Species, levels=c("A. clavatus","M. boulderensis","C. pellucida","M. sanguinipes"), ordered=TRUE)
-
-ov.plot=ggplot(data=repro2, aes(x=Elevation, y = Novarioles,color=Species))+geom_point()+geom_line()+theme_bw()+ theme(legend.position="none")+ 
-  geom_errorbar(aes(ymin=Novarioles-Novarioles.se, ymax=Novarioles+Novarioles.se), width=.1)+
-  scale_colour_manual(values = sp.col)
-
-clutch.plot=ggplot(data=repro2, aes(x=Elevation, y = clutch,color=Species))+geom_point()+geom_line()+theme_bw()+ theme(legend.position="none")+ 
-  geom_errorbar(aes(ymin=clutch-clutch.se, ymax=clutch+clutch.se), width=.1)+
-  scale_colour_manual(values = sp.col)
-
-egg.mass.plot=ggplot(data=repro2, aes(x=Elevation, y = egg.mass*1000,color=Species))+geom_point()+geom_line()+theme_bw()+ theme(legend.position="none")+ xlim(1550,3530)+
-  geom_errorbar(aes(ymin=egg.mass-egg.mass.se, ymax=egg.mass+egg.mass.se), width=.1)+ylab("Egg mass (mg)")+ theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank())+
-  scale_colour_manual(values = sp.col)
-
-clutch.mass.plot=ggplot(data=repro2, aes(x=Elevation, y = clutch.mass,color=Species))+geom_point()+geom_line()+theme_bw()+ theme(legend.position="none")+ xlim(1550,3530)+
-  geom_errorbar(aes(ymin=clutch.mass-clutch.mass.se, ymax=clutch.mass+clutch.mass.se), width=.1)+ylab("Clutch mass (g)")+xlab("Elevation (m)")+
-  scale_colour_manual(values = sp.col)
-
-Fov.plot=ggplot(data=repro2, aes(x=Elevation, y = NFovarioles,color=Species))+geom_point()+geom_line()+theme_bw()+ theme(legend.position="none")+ xlim(1550,3530)+
-  geom_errorbar(aes(ymin=NFovarioles-NFovarioles.se, ymax=NFovarioles+NFovarioles.se), width=.1)+
-  theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank())+ylab("N functional ovarioles")+
-  scale_colour_manual(values = sp.col)
-
-PFov.plot=ggplot(data=repro2, aes(x=Elevation, y = PFovarioles,color=Species))+geom_point()+geom_line()+theme_bw()+ theme(legend.position="none")+ 
-  geom_errorbar(aes(ymin=PFovarioles-PFovarioles.se, ymax=PFovarioles+PFovarioles.se), width=.1)+
-  scale_colour_manual(values = sp.col)
-
+#accumulate energy until egg mass and clutch size reached
 
 assim=0.215 #assimilation rate, Fielding 2004
 #Assume 20% efficiency in converting eggs  into Fielding 2004
@@ -358,70 +318,149 @@ surv<- function(T, CTmin, CTmax, td=4.34){
 #plot(0:70, surv(0:70, 10, 60), type="l")
 #points(c(10,60),c(0.8,0.8))
 
+#define geometric mean
+geo_mean <- function(data) {
+  log_data <- log(data)
+  gm <- exp(mean(log_data[is.finite(log_data)]))
+  return(gm)
+}
+
 #=================================
-#FECUNDITY
-#Based on CTmin, Topt, CTmax
-Te.dat[ind.k,spec.k,4,]<-tpc.perf( ts, Topt=spec.dat[spec.k,"PBT"], CTmin=spec.dat[spec.k,"CTmin"], CTmax=spec.dat[spec.k,"CTmax"])
+#RUN MODEL
 
-#Based on hopping TPC
-# if(!specs[spec.k]=="clav"){ #NOT CLAVATUS
-# ind.elev= dat[ind.k,"Elev"]
-# if(ind.elev==1708)ind.elev<-2195
-# tpc= tpc.dat[which(tpc.dat$spec==specs[spec.k] & tpc.dat$elev_m==2591),]  ##use mid elevation
-# 
-# Te.dat[ind.k,spec.k,6,]<-TPC.gausgomp(ts, To=tpc$To, rho=0.7, sigma=tpc$sigma, Fmax=tpc$Pmax)
-#} #check for clavatus
-#Te.dat[ind.k,spec.k,6,]<-predict(lo,ts)
-perf= rezende_2019(ts, q10=2.27, a=0.109, b=9.02, c=0.00116)
-perf[which(perf<0)]=0
-Te.dat[ind.k,spec.k,6,]<-perf
+#array for fitness data
+fit.dat<- array(data = NA, dim = c(nrow(co.inds),length(years),3), dimnames = NULL)
+#3rd dimension in fecundity, survival, fitness
 
-#Survival  
-Te.dat[ind.k,spec.k,5,]<- surv( ts, CTmin= spec.dat[spec.k,"CTmin"], CTmax=spec.dat[spec.k,"CTmax"])  #HEAT STRESS ONLY spec.dat[spec.k,"CTmin"] -20
+##loop grid cells
+for(grid.k in 1:nrow(co.pts) ){
+#grid.k=1
 
+##loop years
+for(yr.k in 1:8 ){    #1:length(years)
+#yr.k<- 1
+year= years[yr.k]
 
-#-------------------------------
-# FITNESS: We will multiply these additive (fecundity) and multiplicative (survival) components to estimate fitness and the fitness estimates will provide estimates of selection on phenotypes / genotypes. The model could potentially be extended to include a quantitative genetic model of evolution
+##loop phenotypes?
 
+#estimate development (proportion per day) starting March 1 through August, doy=60:243
 
+#make time series to estimate development
+doys.dev<- 60:243
+T.series= cbind(doys.dev, Th.dat[grid.k, yr.k, 60:243,])
+colnames(T.series)=c("doy", 1:24)
+#to long format
+Tl<- as.data.frame(T.series) %>%
+  gather("hr", "Thr", 2:ncol(T.series))
+
+#estimate development
+Tl$dev= devel.prop(T= Tl$Thr)/24
+Tl$dev.sum= cumsum(Tl$dev)
+#Find phenology
+doy.ad= Tl$doy[min(which(Tl$dev.sum>1))]
+#add in delay after adult development until egg laying,  https://www.jstor.org/stable/4219411
+
+#diapause and embryogenesis, Hilbert 1985
+
+#model survival and longevity
 #Fielding 2004 https://doi.org/10.1016/j.ecolmodel.2003.10.014
-# *** IBM based on resources
-# somatic mass; reproductive mass
-# Assimilation rate (food quality) at beginning of season, and on day t 0.215
-# Consumption rate (mg food mg−1 grasshopper) 0.530
-# Respiratory loss (mg mg−1 grasshopper) 0.034
-# Growth rate = (ca − l) 0.080
 # Daily mortality rate for eggs, juveniles, adults 0.01
-# After individuals attain their target size, they be- come adults and assimilated biomass is no longer allo- cated towards growth, but towards reproduction.
-# The same function is used for accumulation of reproductive biomass as somatic growth, except the rate of weight gain was divided by a factor of 5 to account for the greater concentration of energy and protein in the eggs and the extra biomass associated with production of a pod. 
-# non-selective background mortal- ity of 0.01 per day was instituted for juveniles and adults. Eggs were subject to a constant mortality rate (default = 0.015 per day). 
 
 #Carter et al 1998 https://doi.org/10.1093/ee/27.4.892
-# *** M sanguinipes population model
-# A maximum rate of egg production per female per degree day was estimated from data in Pickford (1958), pfadt (1949), Smith (1966), and Smith (1968). 
-# egg production factor
-# mortality associated with precipitation
-# development functions #USE?
-# Adult longevity functions #USE?
-# rate of embryogenesis as a function of temperature
-# diapause development rate
+#Adult longevity functions, 
+#long lab survival: Tatat et al. 1997, https://link.springer.com/article/10.1007/s004420050246
 
-#Hilbert and Logan 1983. development https://doi.org/10.1093/ee/12.1.1
-# *** temperature dependence of development for Melanoplus sanguinipes
-# development data #USE
+#------
+if(!is.na(doy.ad)){
 
-#Hilbert and Logan 1983. https://doi.org/10.1016/B978-0-444-42179-1.50041-9 
-#     0.69 eggs per degree day greater than 20C
+#start accumulating energy to translate into eggs
+Te.series= cbind(doy.ad:243, Te.dat[grid.k, yr.k, doy.ad:243,])
+colnames(Te.series)=c("doy", 1:24)
 
-#Berry et al. 1993. Object-oriented Simulation Model of Rangeland Grasshopper Population Dynamics 
-#growth parameter food to grasshopper and egg mass
-# ***
-# cGrowth: parameter, conversion factor used to convert food to grasshopper mass (0.05)
-# cEggs: parameter, conversion factor used to convert food to grasshopper egg mass (0.1)
+#to long format
+Tel<- as.data.frame(Te.series) %>%
+  gather("hr", "Te", 2:ncol(Te.series))
+#limit Te to 10C over CTmax
+Tel$Te[Tel$Te> (spec.dat[1,"CTmax"]+5)]<- spec.dat[1,"CTmax"] +5
 
-#Rodell 1977. A GRASSHOPPER MODEL FOR A GRASSLAND ECOSYSTEM. https://esajournals.onlinelibrary.wiley.com/doi/pdf/10.2307/1935600
-#*** rate of oviposition: proportion of female bodymass going to eggs per day
-# egg production function
-# low temp and egg viability function
-# Other literature values include assimilation efficiencies of 0.274 (Smalley 1960), 0.31-0.48 (Husain et al. 1946), 0.16-0.20 (Hussain 1972), 0.35-0.78 (Davey 1954), 0.161-0.486 (Gyllenberg 1969), and 0.226-0.322 (Mitchell 1973).
-#------------------------
+#estimate survival in response to extremes
+Tel$surv= surv(Tel$Te, CTmin=spec.dat[1,"CTmin"], CTmax=spec.dat[1,"CTmax"])
+
+#energy in #NEED TO UPDATE
+Tel$Ein<- tpc.perf(Tel$Te,Topt=spec.dat[1,"PBT"], CTmin=spec.dat[1,"CTmin"], CTmax=spec.dat[1,"CTmax"])
+#doesn't yet account for assimilation: assim*
+
+#energy use
+Tel$vCO2<- vCO2(M=spec.dat[1,"Massg_C1"], Tel$Te, elev_m=3048, b0=spec.dat[1,"b0"], b1=spec.dat[1,"b1"], b2=spec.dat[1,"b2"], b3=spec.dat[1,"b3"])
+Tel$lipid.g= lipid.g(Tel$vCO2)
+#account for activity?
+
+#net energy to eggs
+Tel$Enet<- Tel$Ein - Tel$lipid.g
+
+#account for survival: 0.01 daily mortality rate for eggs, juveniles, and adults Fielding 2004
+Tel$dsurv= 0.99^Tel$doy
+Tel$Enet.surv= Tel$Enet*Tel$dsurv
+
+#cumulative energetics
+#replace NAs with zeros
+Tel$Enet.surv[is.na(Tel$Enet.surv)]<-0
+Tel$Ecumsum= cumsum(Tel$Enet.surv)*0.2 #assume 20% conversion to eggs #UPDATE
+
+#estimate fecundity discounting by survival
+clutch.mass<- as.numeric(repro2[repro2$Site=="C1" & repro2$Species=="sanguinipes","clutch.mass"])
+
+n.eggs<- as.numeric(floor(Tel$Ecumsum[nrow(Tel)]/clutch.mass)*repro2[repro2$Site=="C1" & repro2$Species=="sanguinipes","clutch"])
+#limit to max number eggs #Approximate value, https://doi.org/10.4039/Ent98617-6
+if(n.eggs>500) n.eggs<-500
+
+#estimate fitness as (sum of fecundity)(product of survival)
+#https://github.com/lbuckley/FitnessJEB
+fit.dat[grid.k, yr.k,1]<- n.eggs
+fit.dat[grid.k, yr.k,2]<- geo_mean(na.omit(Tel$surv))
+fit.dat[grid.k, yr.k,3]<- n.eggs * geo_mean(na.omit(Tel$surv))
+
+} #end check can develop
+} #end loop years
+} #end loop grid cells
+
+#------------
+#plot output
+
+# number eggs
+fit1= cbind(co.pts, fit.dat[,,1])
+colnames(fit1)[5:ncol(fit1)]<- years
+#to long format
+fit1<- as.data.frame(fit1) %>%
+  gather("year", "value", 5:ncol(fit1))
+fit1$comp<- "eggs"
+
+#survival
+fit2= cbind(co.pts, fit.dat[,,2])
+colnames(fit2)[5:ncol(fit2)]<- years
+#to long format
+fit2<- as.data.frame(fit2) %>%
+  gather("year", "value", 5:ncol(fit2))
+fit2$comp<- "surv"
+
+#fitness
+fit3= cbind(co.pts, fit.dat[,,3])
+colnames(fit3)[5:ncol(fit3)]<- years
+#to long format
+fit3<- as.data.frame(fit3) %>%
+  gather("year", "value", 5:ncol(fit3))
+fit3$comp<- "fit"
+
+fit<- rbind(fit1, fit2, fit3)
+
+plot.co= ggplot(data=fit, aes(x=lons, y=lats))+
+  geom_point(aes(color=value), size=4)+
+  facet_grid(comp~year)
+
+
+
+
+
+
+
+
