@@ -8,6 +8,7 @@ library(PCICt)
 library(NicheMapR)
 library(TrenchR)
 library(tidyr)
+library(dplyr)
 
 #Read species data
 setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/FitnessContrib_JEB/data/Data/Grasshopper/")
@@ -81,7 +82,7 @@ Te.dat<- array(data = NA, dim = c(nrow(co.inds),length(years), 366, 24), dimname
 Th.dat<- array(data = NA, dim = c(nrow(co.inds),length(years), 366, 24), dimnames = NULL)
 
 #retrieve and extract data
-for (year.k in 7:length(years) ){ #length(years)
+for (year.k in 1:length(years) ){ #length(years)
   
   t2min <- brick(paste("t2min_", years[year.k],".nc", sep=""), varname = "t2min")
   t2max <- brick(paste("t2max_", years[year.k],".nc", sep=""), varname = "t2max")
@@ -139,12 +140,12 @@ for (year.k in 7:length(years) ){ #length(years)
   clim.dat[1:length(times),,3, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) q2[x[1],x[2]])
   clim.dat[1:length(times),,4, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) soil_t[x[1],x[2]])   
   clim.dat[1:length(times),,5, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) wspd10mean[x[1],x[2]])
-  #clim.dat[1:length(times),,6, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) sw_sfc[x[1],x[2]])
-  #clim.dat[1:length(times),,7, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) lw_sfc[x[1],x[2]])
-  #Check issue with radiation
-  rad= apply(co.inds[,], MARGIN=1, FUN=function(x) extract(sw_sfc, x) )
-  clim.dat[1:length(times),,6, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) extract(sw_sfc, x)[1,] )
-  clim.dat[1:length(times),,7, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) extract(lw_sfc, x)[2,] )
+  clim.dat[1:length(times),,6, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) sw_sfc[x[1],x[2]])
+  clim.dat[1:length(times),,7, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) lw_sfc[x[1],x[2]])
+  # #Check issue with radiation
+  # rad= apply(co.inds[,], MARGIN=1, FUN=function(x) extract(sw_sfc, x) )
+  # clim.dat[1:length(times),,6, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) extract(sw_sfc, x)[1,] )
+  # clim.dat[1:length(times),,7, year.k] <- apply(co.inds[,], MARGIN=1, FUN=function(x) extract(lw_sfc, x)[2,] )
   
 #-------
 
@@ -222,9 +223,9 @@ Te.dat[site.k, year.k, 1:365, hr] <- apply(gdat, MARGIN=1, FUN= function(x) Tb_g
 
 #save data
 setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/GrasshopperRoL/data/")
-#saveRDS(clim.dat, file = "climdat.rds")
-#saveRDS(Te.dat, file = "Tedat.rds")
-#saveRDS(Th.dat, file = "Thdat.rds")
+saveRDS(clim.dat, file = "climdat.rds")
+saveRDS(Te.dat, file = "Tedat.rds")
+saveRDS(Th.dat, file = "Thdat.rds")
 
 # Restore the object
 # clim.dat<- readRDS(file = "climdat.rds")
@@ -329,15 +330,15 @@ geo_mean <- function(data) {
 #RUN MODEL
 
 #array for fitness data
-fit.dat<- array(data = NA, dim = c(nrow(co.inds),length(years),3), dimnames = NULL)
-#3rd dimension in fecundity, survival, fitness
+fit.dat<- array(data = NA, dim = c(nrow(co.inds),length(years),4), dimnames = NULL)
+#3rd dimension in fecundity, survival, fitness, phenology
 
 ##loop grid cells
 for(grid.k in 1:nrow(co.pts) ){
 #grid.k=1
 
 ##loop years
-for(yr.k in 1:8 ){    #1:length(years)
+for(yr.k in 1:length(years)){    #1:length(years)
 #yr.k<- 1
 year= years[yr.k]
 
@@ -346,18 +347,22 @@ year= years[yr.k]
 #estimate development (proportion per day) starting March 1 through August, doy=60:243
 
 #make time series to estimate development
-doys.dev<- 60:243
-T.series= cbind(doys.dev, Th.dat[grid.k, yr.k, 60:243,])
+doys.dev<- 1:243
+T.series= cbind(doys.dev, Th.dat[grid.k, yr.k, 1:243,])
 colnames(T.series)=c("doy", 1:24)
 #to long format
 Tl<- as.data.frame(T.series) %>%
   gather("hr", "Thr", 2:ncol(T.series))
+Tl$hr<- as.numeric(Tl$hr)
+#sort by doy then hr
+Tl<- Tl[order(Tl$doy,Tl$hr),]
 
 #estimate development
 Tl$dev= devel.prop(T= Tl$Thr)/24
-Tl$dev.sum= cumsum(Tl$dev)
+Tl$dev.sum= cumsum(replace_na(Tl$dev, 0))
 #Find phenology
 doy.ad= Tl$doy[min(which(Tl$dev.sum>1))]
+fit.dat[grid.k, yr.k,4]<- doy.ad
 #add in delay after adult development until egg laying,  https://www.jstor.org/stable/4219411
 
 #diapause and embryogenesis, Hilbert 1985
@@ -371,7 +376,7 @@ doy.ad= Tl$doy[min(which(Tl$dev.sum>1))]
 #long lab survival: Tatat et al. 1997, https://link.springer.com/article/10.1007/s004420050246
 
 #------
-if(!is.na(doy.ad)){
+if(!is.na(doy.ad) & doy.ad<240){
 
 #start accumulating energy to translate into eggs
 Te.series= cbind(doy.ad:243, Te.dat[grid.k, yr.k, doy.ad:243,])
@@ -427,39 +432,66 @@ fit.dat[grid.k, yr.k,3]<- n.eggs * geo_mean(na.omit(Tel$surv))
 #------------
 #plot output
 
+#add elevation to pts
+library(elevatr)
+ll_prj <- "EPSG:4326"
+co.pts<- as.data.frame(co.pts)
+examp_df<- data.frame(x=co.pts[,4], y=co.pts[,3])
+elevs<- get_elev_point(examp_df, prj = ll_prj, src = "aws")
+co.pts$elev.m <- elevs$elevation
+
 # number eggs
 fit1= cbind(co.pts, fit.dat[,,1])
-colnames(fit1)[5:ncol(fit1)]<- years
+colnames(fit1)[6:ncol(fit1)]<- years
 #to long format
 fit1<- as.data.frame(fit1) %>%
-  gather("year", "value", 5:ncol(fit1))
+  gather("year", "value", 6:ncol(fit1))
 fit1$comp<- "eggs"
 
 #survival
 fit2= cbind(co.pts, fit.dat[,,2])
-colnames(fit2)[5:ncol(fit2)]<- years
+colnames(fit2)[6:ncol(fit2)]<- years
 #to long format
 fit2<- as.data.frame(fit2) %>%
-  gather("year", "value", 5:ncol(fit2))
+  gather("year", "value", 6:ncol(fit2))
 fit2$comp<- "surv"
 
 #fitness
 fit3= cbind(co.pts, fit.dat[,,3])
-colnames(fit3)[5:ncol(fit3)]<- years
+colnames(fit3)[6:ncol(fit3)]<- years
 #to long format
 fit3<- as.data.frame(fit3) %>%
-  gather("year", "value", 5:ncol(fit3))
+  gather("year", "value", 6:ncol(fit3))
 fit3$comp<- "fit"
 
-fit<- rbind(fit1, fit2, fit3)
+#phenology
+fit4= cbind(co.pts, fit.dat[,,4])
+colnames(fit4)[6:ncol(fit4)]<- years
+#to long format
+fit4<- as.data.frame(fit4) %>%
+  gather("year", "value", 6:ncol(fit4))
+fit4$comp<- "phen"
+
+fit<- rbind(fit1, fit2, fit3, fit4)
 
 plot.co= ggplot(data=fit, aes(x=lons, y=lats))+
   geom_point(aes(color=value), size=4)+
   facet_grid(comp~year)
 
+ggplot(data=fit4, aes(x=lons, y=lats))+
+  geom_point(aes(color=value), size=5)+
+  facet_wrap(.~year, ncol=4)
 
+# #doesn't work due to uneven grid
+# ggplot(data=fit4, aes(x=lons, y=lats))+
+#   geom_raster(aes(fill=value), interpolate = TRUE)+
+#   facet_wrap(.~year, ncol=4)
 
-
+#plot by elevation
+ggplot(data=fit, aes(x=elev.m, y=value, color=year, group=year))+
+  geom_point()+
+  geom_smooth()+
+  facet_wrap(.~comp, scales="free_y")
 
 
 
