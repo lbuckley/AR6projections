@@ -242,6 +242,8 @@ saveRDS(Th.dat, file = "Thdat.rds")
 devel.prop= function(T, alpha=0.0455, beta=8814.36, gamma=-14877.95, delta=298.81, lambda=47258.52, theta=316.695, R=1.987){
   alpha*(T/298)*exp((beta/R)*(1/298 - 1/T))/(1+exp((gamma/R)*(1/delta - 1/T))+exp((lambda/R)*(1/theta - 1/T)))}
 
+plot(1:60, devel.prop(1:60+273.15), type="l", ylab="Development (proportion)", xlab="body temperature (C)", cex.lab=1.5)
+
 # ENERGETICS
 # Energy in:
 #   Foraging time based on temperature limits for activity, but unlikely limiting
@@ -273,7 +275,7 @@ tpc.perf= function(T,Topt,CTmin, CTmax){
 vCO2= function(M, Tb, elev_m, b0, b1, b2, b3, k=8.62*10^-5) exp(b0 +b1*log(M)+b2*(1/(k*(Tb+273.15)))+b3*elev_m)
 lipid.g= function(vCO2) (0.7*vCO2/2)
 
-plot(1:60, vCO2(M=spec.dat[1,"Massg_C1"], 1:60, elev_m=3048, b0=spec.dat[1,"b0"], b1=spec.dat[1,"b1"], b2=spec.dat[1,"b2"], b3=spec.dat[1,"b3"]) )
+plot(1:60, vCO2(M=spec.dat[1,"Massg_C1"], 1:60, elev_m=3048, b0=spec.dat[1,"b0"], b1=spec.dat[1,"b1"], b2=spec.dat[1,"b2"], b3=spec.dat[1,"b3"]), type="l", ylab="MR (ml CO2/hr)", xlab="body temperature (C)", cex.lab=1.5)
 
 #   Assume portion of energy allocated to maintenance, reproduction
 # [Needs: estimation approach; based on lipid content?
@@ -299,7 +301,7 @@ repro2= as.data.frame(repro) %>% group_by(Site,Elevation, Species) %>% summarise
 #accumulate energy until egg mass and clutch size reached
 
 assim=0.215 #assimilation rate, Fielding 2004
-#Assume 20% efficiency in converting eggs  into Fielding 2004
+#Assume 20% efficiency in converting energy into eggs, Fielding 2004
 
 #-----------
 # SURVIVAL: Use thermal tolerance and stress response data to estimate daily survival. We will model survival as the product of survival to adulthood and daily survival. 
@@ -316,7 +318,7 @@ surv<- function(T, CTmin, CTmax, td=4.34){
   return( s*0.8 )
 }
 
-#plot(0:70, surv(0:70, 10, 60), type="l")
+#plot(0:70, surv(0:70, 10, 60), type="l", ylab="survival (%)", xlab="body temperature (C)", cex.lab=1.5)
 #points(c(10,60),c(0.8,0.8))
 
 #define geometric mean

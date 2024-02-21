@@ -25,11 +25,11 @@
 #assume respiratory quotient of 0.7 for lipids update
 #converted to energy use assuming 39 kJ g^−1 lipid
 
-bs.ms<- c(0.90, 0.48, 8.68 * 10^{-5})
-bs.md<- c(0.98, 0.48, 1.24 * 10^{-4})
+#bs.ms<- c(0.90, 0.48, 8.68 * 10^{-5})
+#bs.md<- c(0.98, 0.48, 1.24 * 10^{-4})
 
-vCO2= function(M, Tb, elev_m) exp(b1*log(M)+b2*(1/(k*Tb))+b3*elev_m)
-lipid.g= function(vCO) (0.7*vCo2/2)
+#vCO2= function(M, Tb, elev_m) exp(b1*log(M)+b2*(1/(k*Tb))+b3*elev_m)
+#lipid.g= function(vCO) (0.7*vCo2/2)
 
 #   Assume portion of energy allocated to maintenance, reproduction
 # [Needs: estimation approach; based on lipid content?
@@ -60,10 +60,6 @@ lipid.g= function(vCO) (0.7*vCo2/2)
 #Reproductive allocation in experiments
 
 #Branson 2022 https://doi.org/10.3390/geographies2010003, Wyoming abundance sampling
-
-# *** De Sousa Santos and Begon 1987 https://www.jstor.org/stable/2389423 
-#Estimates of reproductive energetics for UK grasshopper 
-#Energy values of eggs etc
 
 #I. Filin and O. Ovadia . 2007 
 # *** Energetic population model for M. femurrubrum https://doi.org/10.1086/522091 
@@ -119,4 +115,22 @@ lipid.g= function(vCO) (0.7*vCo2/2)
 # egg production function
 # low temp and egg viability function
 # Other literature values include assimilation efficiencies of 0.274 (Smalley 1960), 0.31-0.48 (Husain et al. 1946), 0.16-0.20 (Hussain 1972), 0.35-0.78 (Davey 1954), 0.161-0.486 (Gyllenberg 1969), and 0.226-0.322 (Mitchell 1973).
+
+#ENERGETICS
+#Jackson et al 1968, https://doi.org/10.1016/0022-1910(68)90208-4
+#Energetics of M. bivittatus eggs
+
+#Kohler et al 1987, https://www.jstor.org/stable/pdf/4218439.pdf
+#Energy partitioning across grasshoppers species
+#proportion of production used for egg production: 28-44%
+#In C. parallelus, with an average fecundity of 17 eggs/ female, this loss is 391 J per average individual, i.e. without distinguishinh between males and females
+#G. rufus: 643J (3.1% of energy ingested)
+
+#De Sousa Santos and Begon 1987 https://www.jstor.org/stable/2389423 
+#Estimates of reproductive energetics for UK grasshopper 
+#Energy values of eggs etc
+
+#Hook 1971, https://esajournals.onlinelibrary.wiley.com/doi/abs/10.2307/1942433 
+#Energy and nutrient dynamics of spider and orthopteran populations in a grassland ecosystem
+#Energy budget but not for reproduction
 #------------------------
