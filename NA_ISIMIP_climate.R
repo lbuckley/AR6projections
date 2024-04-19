@@ -7,6 +7,9 @@ library(PCICt)
 #install.packages("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/NicheMapR_3.2.1.tgz", repos = NULL, type = .Platform$pkgType)
 library(NicheMapR)
 library(TrenchR)
+library(ggplot2)
+library(tidyr)
+library(plyr)
 #---------------
 #Prepares ISIMIP daily data for NA and runs microclimate and biophysical model
 
@@ -98,6 +101,77 @@ clim.grid<- as.data.frame(cbind(time, doys, tasmax.ts, tasmin.ts, sfcwind.ts, rs
 # plot(1:length(time), sfcwind.ts, type="l")
 # plot(1:length(time), rsds.ts, type="l")
 # plot(1:length(time), hurs.ts, type="l")
+
+#----
+#LOAD BIOLOGICAL DATA
+#Larval would mean the individual was reared at the treatment temperature from hatching
+#pupal means the individuals were reared at 26 degrees until pupation, then switched into their treatments. 
+
+#"PupalTempData" contains data for all three populations where individuals were reared at treatment temperatures only during the pupal stage. 
+#"RearingTempPupalData" contains pupal data for the individuals that were reared at the treatment temperatures since hatching. 
+#"LarvalCombData" contains all of the larval data for individuals that were kept at treatment temperatures since hatching. 
+setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/INTBIO/data/")
+ldat<- read.csv("LarvalCombData.csv")
+pdat<- read.csv("PupalTempData.csv")
+rtdat<- read.csv("RearingTempPupalData.csv")
+
+#proportion surviving to egg
+#proportion surviving hatching to pupation
+ldat$Surv.p<- 0
+ldat$Surv.p[ldat$Surv.pupa=="Y"]<- 1
+ldat.s<- aggregate(ldat$Surv.p, by = list(Treatment= ldat$Treatment, Pop=ldat$Population), FUN = "mean")
+
+#survival curves by time and temperature
+ggplot(data=ldat.s, aes(x=Treatment, y=x, color=Pop))+
+  geom_point()+
+  geom_smooth()
+
+#pupal development rate
+pd.plot= ggplot(data=pdat, aes(x=Treatment, y=1/DaysPtoE, color=Population))+
+  geom_point()+
+  geom_smooth()
+
+ggplot(data=pdat, aes(x=Treatment, y=1/DaysHtoP, color=Population))+
+  geom_point()+
+  geom_smooth()
+
+#larval mass
+#to long format
+ldat2<- ldat[,c(1:3,20:21,5:6,8:9,13:14)]
+ldat.l<- ldat2 %>%
+  gather("metric", "value", 6:ncol(ldat2))
+ldat.l$type<- "mass"
+ldat.l$type[ldat.l$metric %in% c("Time.4th","Time.5th","Age.pupa")]<- "time"
+ldat.l$instar<-4
+ldat.l$instar[ldat.l$metric %in% c("Time.5th", "Mass.5th")]<-5
+ldat.l$instar[ldat.l$metric %in% c("Age.pupa", "Mass.pupa")]<-6
+
+ggplot(data=ldat.l, aes(x=instar, y=value, color=Treatment, group=Treatment))+
+  geom_point()+
+  geom_smooth()+
+  facet_grid(type~Population, scales="free_y")
+
+#development time
+ggplot(data=ldat.l[which(ldat.l$type=="time"),], aes(x=Treatment, y=1/value, color=Population))+
+  geom_point()+
+  geom_smooth()+
+  facet_wrap(.~instar)
+
+#pupal mass
+ggplot(data=ldat.l[which(ldat.l$type=="mass"),], aes(x=Treatment, y=value, color=Population))+
+  geom_point()+
+  geom_smooth()+
+  facet_wrap(.~instar)
+
+#adult mass
+ggplot(data=pdat, aes(x=Treatment, y=Mass.adult, color=Population))+
+  geom_point()+
+  geom_smooth()
+
+#TO MODEL
+#Larval development rate: phenology
+#Survival using survival curves: survival
+#Adult mass: relate to fedundity? Not clear growth TPC
 
 #----
 #microclimate and biophysical
