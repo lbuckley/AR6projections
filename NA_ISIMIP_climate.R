@@ -30,8 +30,8 @@ library(plyr)
 # pr: total precipiation, kg m^-2 s^-1
 #hurs, huss: near surface-relative, specific humidity, %, kg kg^−1
 
-setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/ISIMIP/")
-
+setwd("/Users/laurenbuckley/Google Drive/My Drive/Buckley/Work/AR6projections/ISIMIP/")
+#setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/AR6projections/ISIMIP/")
 tasmax<- nc_open("mpi-esm1-2-hr_r1i1p1f1_w5e5_ssp245_tasmax_global_daily_2021_2030.nc")
 
 time <- ncvar_get(tasmax,"time");# extracts time, days
@@ -71,7 +71,7 @@ time.date <- origin.pcict + (ts.dat.days * seconds.per.day)
 #doy
 doys<- day_of_year(time.date, format = "%Y-%m-%d")
 
-#time series for each site
+#time series for each site, extract one year
 grid.ind<- 200
 
 tasmax.ts <- ncvar_get(tasmax, "tasmax", 
@@ -110,7 +110,8 @@ clim.grid<- as.data.frame(cbind(time, doys, tasmax.ts, tasmin.ts, sfcwind.ts, rs
 #"PupalTempData" contains data for all three populations where individuals were reared at treatment temperatures only during the pupal stage. 
 #"RearingTempPupalData" contains pupal data for the individuals that were reared at the treatment temperatures since hatching. 
 #"LarvalCombData" contains all of the larval data for individuals that were kept at treatment temperatures since hatching. 
-setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/INTBIO/data/")
+setwd("/Users/laurenbuckley/Google Drive/My Drive/Buckley/Work/INTBIO/data/")
+#setwd("/Volumes/GoogleDrive/My Drive/Buckley/Work/INTBIO/data/")
 ldat<- read.csv("LarvalCombData.csv")
 pdat<- read.csv("PupalTempData.csv")
 rtdat<- read.csv("RearingTempPupalData.csv")
@@ -169,12 +170,13 @@ ggplot(data=pdat, aes(x=Treatment, y=Mass.adult, color=Population))+
   geom_smooth()
 
 #TO MODEL
-#Larval development rate: phenology
+#Larval development rate: phenology, Rezende model
 #Survival using survival curves: survival
 #Adult mass: relate to fedundity? Not clear growth TPC
 
 #----
 #microclimate and biophysical
+z=0.02 #m, plant height
 
 #MICROCLIMATE
 #NicheMapR microclimate model
@@ -199,7 +201,7 @@ clim.grid$Uz <- wind_speed_profile_neutral(u_r = clim.grid$sfcwind.ts, zr = 2, z
 Thr<- apply(clim.grid, MARGIN=1, FUN= function(x) diurnal_temp_variation_sine(T_max=x[3], T_min=x[4], t=1:24))
 
 #diurnal solar variation OPTIONS
-#*** Currently reestimating soalr radiation below
+#*** Currently reestimating solar radiation below
 #Shr<- apply(clim.grid, MARGIN=1, FUN= function(x) diurnal_radiation_variation(doy=x[2], S=x[6]*24, hour=1:24, lon=grids$lons[grid.ind], lat=grids$lats[grid.ind]))
 #need to fix format
 #Shr<- matrix(unlist(Shr), ncol = 24, byrow = TRUE)
@@ -253,7 +255,6 @@ Tsoil[day.id,2,]<- soil_temperature(z_r.intervals = 12,
                                      shade         = TRUE)
 
 ## scale temperature from two meters
-z <- 0.001 #specify distance from ground 
 Tz[day.id,] <- air_temp_profile(T_r = Thr[,day.id], u_r = clim.grid$Uz[day.id], zr = 2, z0 = 0.02, z = z, T_s = Tsoil[day.id,2,])
 # clim.grid$Tmaxz <- air_temp_profile(T_r = clim.grid$tasmax.ts, u_r = clim.grid$sfcwind.ts, zr = 2, z0 = 0.02, z = z, T_s = XXXX)
 # #check surface roughness
@@ -289,6 +290,22 @@ Te[,hr] <- apply(hr.dat, MARGIN=1, FUN= function(x) Tb_butterfly(T_a = x[1], T_g
 #plot Tes
 plot(1:length(time), Te[,12], type="l", ylim=range(10,55))
 plot(1:24, Te[1,], type="l", ylim=range(10,55))
+
+#-----------------------
+#Apply data corresponding to each population across grid
+
+#Estimate development time
+
+#Estimate survival
+#Tz: temp at plant height
+
+#Estimate size?
+
+
+
+
+
+
 
 
 
